@@ -1,4 +1,4 @@
-<div class="layout layout--row layout--top gap--medium">
+<div class="layout layout--row gap--medium">
   {% if error %}
   <div class="flex flex--col flex--center-x flex--center-y gap--small w--full h--full">
     <span class="title">Drive time unavailable</span>
@@ -9,9 +9,9 @@
     <img src="{{ map_url }}&w=380&h=430" alt="Route map" style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
   </div>
 
-  <div class="flex flex--col gap--small h--full" style="flex: 1; min-width: 0;">
+  <div class="flex flex--col gap--small h--full" style="flex: 1; min-width: 0; justify-content: center;">
     <div class="flex flex--col">
-      <span class="label label--small">To {{ destination_label }} · arrive {{ arrive_by }}</span>
+      <span class="title title--small">To {{ destination_label }} · arrive {{ arrive_by }}</span>
       <span class="value value--xxlarge value--tnums">{{ duration_min }}<span class="title title--small"> min</span></span>
       <span class="description">{{ headline }}</span>
     </div>
@@ -27,7 +27,7 @@
     <div class="divider"></div>
 
     {% if incidents.size > 0 %}
-    <div class="flex flex--col gap--xsmall" style="flex: 1; overflow: hidden;">
+    <div class="flex flex--col gap--xsmall" style="overflow: hidden;">
       {% for incident in incidents limit: 3 %}
       <div class="item">
         <div class="meta"><span class="index">{{ incident.number }}</span></div>
