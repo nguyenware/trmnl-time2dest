@@ -1,7 +1,7 @@
 // End-to-end check of the payload with Google and TomTom stubbed out.
 import assert from 'node:assert/strict';
 import { afterEach, test } from 'node:test';
-import { buildCommute, readConfig, verifyMap } from '../lib/commute.js';
+import { buildCommute, readConfig, stripRoad, verifyMap } from '../lib/commute.js';
 import { encodePolyline } from '../lib/geo.js';
 import mapHandler from '../api/map.js';
 
@@ -154,4 +154,11 @@ test('map endpoint rejects tampered URLs and proxies valid ones', async () => {
   const bad = await invoke(`${url.pathname}${url.search.replace(/s=[^&]+/, 's=forged')}`);
   assert.equal(bad.statusCode, 403);
   delete process.env.GOOGLE_API_KEY;
+});
+
+test('repeated road numbers are dropped from incident locations', () => {
+  assert.equal(stripRoad('Bridge Way/Fremont Way (WA-99)', 'WA-99'), 'Bridge Way/Fremont Way');
+  assert.equal(stripRoad('6th Ave/Broad St (WA-99)', 'WA-99'), '6th Ave/Broad St');
+  assert.equal(stripRoad('Mercer St (I-5)', 'WA-99'), 'Mercer St (I-5)', 'other roads are kept');
+  assert.equal(stripRoad('Rainier Ave', ''), 'Rainier Ave');
 });
