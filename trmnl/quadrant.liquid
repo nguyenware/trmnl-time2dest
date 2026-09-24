@@ -1,0 +1,19 @@
+<div class="layout layout--col layout--center gap--xsmall">
+  {% if error %}
+  <span class="description">{{ error }}</span>
+  {% else %}
+  <span class="value value--xlarge value--tnums">{{ duration_min }}<span class="title title--small"> min</span></span>
+  <span class="description text--center" data-clamp="1">Via {{ via }}</span>
+  <span class="label label--small">Arrive {{ arrive_by }}{% if delay_min > 0 %} · +{{ delay_min }} min traffic{% endif %}</span>
+  {% if accident_count > 0 %}
+  <span class="label label--small label--inverted">{{ accident_count }} accident{% if accident_count > 1 %}s{% endif %} on route</span>
+  {% elsif incident_count > 0 %}
+  <span class="label label--small label--outline">{{ incident_count }} incident{% if incident_count > 1 %}s{% endif %} on route</span>
+  {% endif %}
+  {% endif %}
+</div>
+
+<div class="title_bar">
+  <span class="title">{{ destination_label | default: "Commute" }}</span>
+  <span class="instance">{{ updated_at }}</span>
+</div>

@@ -1,48 +1,28 @@
-import axios from 'axios/dist/node/axios.cjs';
+import { buildCommute, missingConfig, readConfig } from '../lib/commute.js';
+import { UpstreamError } from '../lib/google.js';
+import { publicBaseUrl, requestUrl, sendJson } from '../lib/http.js';
 
 export default async function handler(req, res) {
+  const config = readConfig();
+  const missing = missingConfig(config);
+  if (missing.length) {
+    return sendJson(res, 500, { error: `Missing environment variables: ${missing.join(', ')}` });
+  }
+
   try {
-    const directionsUrl = 'https://maps.googleapis.com/maps/api/directions/json';
-    const staticMapBaseUrl = 'https://maps.googleapis.com/maps/api/staticmap';
-    
-    const params = {
-      origin: process.env.HOME_ADDRESS,
-      destination: process.env.WORK_ADDRESS,
-      departure_time: 'now',
-      key: process.env.GOOGLE_API_KEY
-    };
-
-    if (!params.key) {
-      console.error('Missing GOOGLE_API_KEY');
-      return res.status(500).json({ error: 'GOOGLE_API_KEY is missing' });
-    }
-
-   const response = await axios.get(directionsUrl, { params });
-
-    if (
-      response.data.routes.length === 0 ||
-      response.data.routes[0].legs.length === 0
-    ) {
-      return res.status(404).json({ error: 'No route found' });
-    }
-
-     const route = response.data.routes[0];
-    const duration = route.legs[0].duration.text;
-    const polyline = route.overview_polyline?.points;
-
-    const mapUrl = `${staticMapBaseUrl}?size=400x480&scale=2&path=enc:${polyline}&markers=color:green|${process.env.HOME_ADDRESS}&markers=color:red|${process.env.WORK_ADDRESS}&style=feature:all|element:all|saturation:-100&key=${params.key}`;
-
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.setHeader('Surrogate-Control', 'no-store');
-
-     return res.status(200).json({
-      time: duration,
-      staticMapUrl: mapUrl
+    const url = requestUrl(req);
+    const commute = await buildCommute(config, {
+      direction: url.searchParams.get('direction'),
+      baseUrl: publicBaseUrl(req),
     });
+    // A one-minute edge cache absorbs repeated previews without making the
+    // display stale; TRMNL itself polls every 5+ minutes.
+    return sendJson(res, 200, commute, 'public, max-age=0, s-maxage=60');
   } catch (err) {
-    console.error('Drive time/map error:', err.response?.data || err.message || err);
-    return res.status(500).json({ error: 'Could not fetch drive time or map' });
+    console.error('Commute lookup failed:', err);
+    if (err instanceof UpstreamError) {
+      return sendJson(res, 502, { error: err.message });
+    }
+    return sendJson(res, err.status ?? 500, { error: err.message ?? 'Could not fetch drive time' });
   }
 }
